@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KISS - KI.Secretary.Service</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom font import for 'Inter' - often used for modern, clean designs */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f5f5f7; /* Very light grey, similar to Apple's background */
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: #1d1d1f; /* Apple's dark grey text color */
+        }
+        .gradient-text {
+            background: linear-gradient(90deg, #1d4ed8, #22d3ee); /* Blue to Teal gradient for KISS */
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        /* Enhance button focus for accessibility and visual feedback */
+        button:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(34, 197, 255, 0.4); /* Light blue ring */
+        }
+
+        /* Direct styling for the industry input field by ID */
+        #industry {
+            box-sizing: border-box; /* Ensures consistent sizing */
+            width: 100%; /* Default to full width for mobile */
+            padding: 0.75rem 1.25rem; /* py-3 px-5 */
+            border: 1px solid #d1d5db; /* border border-gray-300 */
+            border-radius: 9999px; /* rounded-full */
+            background-color: #ffffff; /* bg-white */
+            color: #374151; /* text-gray-800 */
+            font-size: 1rem; /* text-base */
+            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); /* shadow-sm */
+            transition: all 0.3s ease-in-out; /* transition-all duration-300 ease-in-out */
+            max-width: 400px; /* Specific max-width as requested */
+        }
+        #industry:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(34, 197, 255, 0.4); /* focus:ring-2 focus:ring-blue-400 */
+            border-color: #60a5fa; /* focus:border-blue-400 */
+        }
+
+        /* Styling for general text input fields (like textarea) */
+        .general-input-field {
+            box-sizing: border-box;
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.5rem; /* Slightly rounded corners */
+            background-color: #ffffff;
+            color: #374151;
+            font-size: 1rem;
+            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease-in-out;
+        }
+        .general-input-field:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(34, 197, 255, 0.4);
+            border-color: #60a5fa;
+        }
+
+        /* Styling for textarea */
+        textarea.general-input-field {
+            min-height: 120px; /* Sufficient height for text */
+            resize: vertical; /* Allow vertical resizing */
+        }
+
+        /* Responsive adjustments for input on larger screens */
+        @media (min-width: 640px) { /* sm breakpoint */
+            #industry {
+                flex-grow: 1; /* flex-grow */
+                width: auto; /* sm:w-auto */
+                min-width: 0; /* min-w-0 */
+            }
+        }
+        /* Custom styles for the collapsible suggestion cards */
+        .suggestion-card-header, .category-card {
+            cursor: pointer;
+            user-select: none; /* Prevent text selection on double click */
+            -webkit-tap-highlight-color: transparent; /* Remove highlight on mobile tap */
+        }
+        .arrow-icon {
+            transition: transform 0.3s ease-in-out;
+        }
+        .arrow-icon.rotated {
+            transform: rotate(180deg);
+        }
+        /* Hide content that should only be shown in detail view */
+        .detail-view-only {
+            display: none;
+        }
+
+        /* Versuch, den "Powered by ElevenLabs Conversational AI" Text auszublenden */
+        /* Dies erfordert möglicherweise genaue Kenntnis der internen DOM-Struktur des ElevenLabs-Widgets.
+           Manchmal kann der Text in einem Shadow DOM gekapselt sein, was direkte CSS-Selektoren von außen blockiert. */
+        elevenlabs-convai::part(branding),
+        elevenlabs-convai::part(attribution),
+        .elevenlabs-powered-by, /* Häufig verwendete Klasse für Branding-Elemente */
+        div[aria-label*="Powered by ElevenLabs"], /* Falls es ein ARIA Label gibt */
+        div[class*="el-convai-"] > div:last-child, /* Versuch, den letzten div im Widget zu treffen, oft für Branding verwendet */
+        div[class*="el-attribution"] { /* Andere mögliche Klassen */
+            display: none !important;
+            visibility: hidden !important;
+            height: 0 !important;
+            overflow: hidden !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+    </style>
+</head>
+<body class="selection:bg-blue-200 selection:text-blue-900">
+    <div class="container mx-auto p-4 md:p-8 lg:p-12 max-w-4xl w-full">
+        <div class="bg-white rounded-3xl shadow-xl p-6 md:p-10 lg:p-16 text-center">
+            <!-- Logo/Titelbereich -->
+            <h1 class="text-xl md:text-2xl font-semibold mb-2 text-gray-700" style="font-family: 'Georgia', serif;">KI.Secretary.Service</h1>
+            <h2 class="text-5xl md:text-7xl lg:text-8xl font-extrabold mb-10 md:mb-12 gradient-text tracking-tight">KISS</h2>
+
+            <!-- Unternehmensbeschreibung -->
+            <p class="text-base md:text-lg lg:text-xl text-gray-700 leading-relaxed mb-8 md:mb-10 max-w-2xl mx-auto">
+                Wir bieten umfassende Automatisierungen und Optimierungen für nahezu alle Branchen und Unternehmen.
+                Wir analysieren Ihre bestehenden Prozesse und identifizieren, wo künstliche Intelligenz integriert und Aufgaben automatisiert werden können,
+                damit sich Ihr Unternehmen maximal auf seine Haupttätigkeiten und die Umsatzgenerierung konzentrieren kann.
+            </p>
+
+            <!-- Branchen-Eingabebereich mit Vorschlägen -->
+            <div class="mb-10 md:mb-12">
+                <label for="industry" class="block text-gray-700 text-sm md:text-base font-medium mb-3">
+                    In welcher Branche sind Sie tätig?
+                </label>
+                <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+                    <input
+                        type="text"
+                        id="industry"
+                        name="industry"
+                        placeholder="z.B. Maurerbetrieb, Malerbetrieb, Friseursalon"
+                        list="industry-suggestions" <!-- Verbindet das Eingabefeld mit der Datalist -->
+                    >
+                    <!-- Datalist für Branchenvorschläge -->
+                    <datalist id="industry-suggestions">
+                        <option value="Maurerbetrieb"></option>
+                        <option value="Malerbetrieb"></option>
+                        <option value="Friseursalon"></option>
+                        <option value="Einzelhandel"></option>
+                        <option value="Produktion"></option>
+                        <option value="Dienstleistungen"></option>
+                        <option value="Finanzen"></option>
+                        <option value="Gesundheitswesen"></option>
+                        <option value="Bildung"></option>
+                        <option value="Technologie"></option>
+                        <option value="Logistik"></option>
+                        <option value="Marketing"></option>
+                        <option value="Recht"></option>
+                        <option value="Immobilien"></option>
+                        <option value="Tourismus"></option>
+                        <option value="Bauwesen"></option>
+                        <option value="Energie"></option>
+                        <option value="Landwirtschaft"></option>
+                    </datalist>
+
+                    <button
+                        id="analyzeButton"
+                        class="flex-shrink-0 w-full sm:w-auto px-6 py-3 bg-blue-600 text-white rounded-full font-semibold text-lg
+                                hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50
+                                transition-all duration-350 ease-in-out transform hover:scale-105 shadow-md"
+                        aria-label="Senden"
+                    >
+                        Jetzt analysieren
+                        <!-- SVG-Pfeilsymbol für visuelles Flair -->
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-2 inline-block" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Neuer Abschnitt für Unternehmensdetails, anfänglich ausgeblendet -->
+            <div id="companyDetailsSection" class="hidden text-left mt-10 md:mt-12 pt-8 border-t border-gray-200">
+                <p class="text-gray-700 text-base md:text-lg mb-6">
+                    Um die bestmöglichen Optimierungen und Automatisierungen für Ihr Unternehmen zu finden, benötigen wir weitere Informationen. Bitte beschreiben Sie detailliert, was Ihr Unternehmen genau macht.
+                </p>
+                <div class="mb-8">
+                    <label for="companyDescription" class="block text-gray-700 text-sm md:text-base font-medium mb-2">
+                        Beschreibung Ihres Unternehmens (bitte hier detaillierte Infos einfügen):
+                    </label>
+                    <textarea
+                        id="companyDescription"
+                        name="companyDescription"
+                        placeholder="Beschreiben Sie hier Ihr Unternehmen, seine Haupttätigkeiten, Zielgruppen und spezifische Herausforderungen, die Sie mit KI lösen möchten..."
+                        rows="10"
+                        class="general-input-field w-full"
+                    ></textarea>
+                </div>
+
+                <button
+                    id="submitDetailsButton"
+                    class="w-full sm:w-auto px-8 py-3 bg-blue-600 text-white rounded-full font-semibold text-lg
+                            hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50
+                            transition-all duration-350 ease-in-out transform hover:scale-105 shadow-md"
+                    aria-label="Analyse starten"
+                >
+                    Analyse starten
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-2 inline-block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1.51-1V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V15z"/></svg>
+                </button>
+
+                <!-- Ladeindikator -->
+                <div id="loadingIndicator" class="hidden text-center mt-8">
+                    <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-500 mx-auto mb-4"></div>
+                    <p class="text-gray-600 text-lg font-medium">Analysiere Ihr Unternehmen und erstelle Vorschläge...</p>
+                </div>
+
+                <!-- KI-Vorschlagsausgabe-Abschnitt -->
+                <div id="aiSuggestionsOutput" class="hidden text-left mt-8 p-6 bg-gray-50 rounded-lg border border-gray-200">
+                    <h3 class="text-xl md:text-2xl font-semibold mb-4 text-gray-800">Passende Automatisierungen & Optimierungen:</h3>
+                    <div id="suggestionsContent" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- KI-generierte Inhalte werden hier je nach Ansicht eingefügt -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Call to Action (CTA) / Kontaktinformationen -->
+            <p class="text-gray-600 text-sm md:text-base mt-10 md:mt-12">
+                Bereit, Ihr Unternehmen zu optimieren?
+                <a href="#" id="contactLink" class="text-blue-600 hover:underline font-medium hover:text-blue-800 transition-colors duration-200">
+                    Kontaktieren Sie uns noch heute!
+                </a>
+            </p>
+
+            <!-- Prominenter Hinweis zum ElevenLabs Widget -->
+            <div class="bg-gradient-to-r from-blue-500 to-cyan-500 text-white p-6 rounded-xl shadow-xl mt-12 text-center max-w-lg mx-auto animate-bounce-subtle">
+                <p class="text-lg md:text-xl font-bold mb-3">Haben Sie Fragen oder möchten Sie unseren KI Telefonassistenten live erleben?</p>
+                <p class="text-base md:text-lg mb-4">
+                    Klicken Sie auf das **schwebende Symbol unten rechts**, um direkt mit unserer fortschrittlichen KI zu sprechen.
+                    Erleben Sie natürliche Sprachkonversation – kein herkömmlicher Anrufbeantworter!
+                </p>
+                <span class="inline-block bg-white text-blue-700 px-4 py-2 rounded-full font-semibold text-sm shadow-md">
+                    Probieren Sie es jetzt aus!
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Nachrichten-Modal -->
+    <div id="messageModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 hidden">
+        <div class="bg-white rounded-lg shadow-xl p-6 max-w-sm w-full text-center relative">
+            <h3 id="modalTitle" class="text-xl font-semibold mb-4 text-gray-800"></h3>
+            <p id="modalMessage" class="text-gray-700 mb-6"></p>
+            <button id="closeModalButton" class="px-6 py-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50">
+                Schließen
+            </button>
+        </div>
+    </div>
+
+    <!-- Kontaktformular-Modal -->
+    <div id="contactFormModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 hidden">
+        <div class="bg-white rounded-lg shadow-xl p-6 max-w-lg w-full text-left relative">
+            <h3 class="text-2xl font-semibold mb-6 text-gray-800 text-center">Kontaktieren Sie uns</h3>
+            
+            <form id="contactForm" action="https://formspree.io/f/movwwryn" method="POST" class="space-y-4">
+                <div>
+                    <label for="contactName" class="block text-gray-700 text-sm font-medium mb-1">Name:</label>
+                    <input type="text" id="contactName" name="name" required
+                           class="general-input-field" placeholder="Ihr Name">
+                </div>
+                <div>
+                    <label for="contactEmail" class="block text-gray-700 text-sm font-medium mb-1">E-Mail-Adresse:</label>
+                    <input type="email" id="contactEmail" name="email" required
+                           class="general-input-field" placeholder="ihre.email@beispiel.de">
+                </div>
+                <div>
+                    <label for="contactPhone" class="block text-gray-700 text-sm font-medium mb-1">Telefonnummer (optional):</label>
+                    <input type="tel" id="contactPhone" name="phone"
+                           class="general-input-field" placeholder="Ihre Telefonnummer">
+                </div>
+                <div>
+                    <label for="contactMessage" class="block text-gray-700 text-sm font-medium mb-1">Ihr Anliegen:</label>
+                    <textarea id="contactMessage" name="message" rows="4" required
+                              class="general-input-field" placeholder="Beschreiben Sie hier kurz Ihr Anliegen..."></textarea>
+                </div>
+                
+                <div class="text-center pt-4">
+                    <button type="submit"
+                            class="px-8 py-3 bg-blue-600 text-white rounded-full font-semibold text-lg
+                                   hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50
+                                   transition-all duration-350 ease-in-out transform hover:scale-105 shadow-md">
+                        Nachricht senden
+                    </button>
+                    <button type="button" id="closeContactFormModal"
+                            class="ml-4 px-8 py-3 bg-gray-200 text-gray-800 rounded-full font-semibold text-lg
+                                   hover:bg-gray-300 transition-colors duration-200">
+                        Abbrechen
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ElevenLabs Conversational AI Widget -->
+    <!-- Dieses Widget ist normalerweise ein schwebendes Element, positioniert über seine eigenen internen Stile oder externes CSS -->
+    <elevenlabs-convai agent-id="agent_01jxg8q0byeqfam8v4qkr39t4y"></elevenlabs-convai>
+    <script src="https://unpkg.com/@elevenlabs/convai-widget-embed" async type="text/javascript"></script>
+
+    <script>
+        // Funktion zum Anzeigen des benutzerdefinierten Modals
+        function showMessageModal(title, message) {
+            document.getElementById('modalTitle').innerText = title;
+            document.getElementById('modalMessage').innerText = message;
+            document.getElementById('messageModal').classList.remove('hidden');
+        }
+
+        // Event-Listener zum Schließen des Nachrichten-Modals
+        document.getElementById('closeModalButton').addEventListener('click', () => {
+            document.getElementById('messageModal').classList.add('hidden');
+        });
+
+        // Global variable to store all parsed suggestions, categorized
+        let allParsedSuggestions = {
+            introText: '',
+            categories: [] // Each category: { title: '...', suggestions: [{ title: '...', content: '...' }] }
+        };
+
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log("DOM fully loaded and parsed. Initializing event listeners.");
+            const analyzeButton = document.getElementById('analyzeButton');
+            const companyDetailsSection = document.getElementById('companyDetailsSection');
+            const submitDetailsButton = document.getElementById('submitDetailsButton');
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            const aiSuggestionsOutput = document.getElementById('aiSuggestionsOutput');
+            const suggestionsContent = document.getElementById('suggestionsContent'); // Main container for all views
+            const contactLink = document.getElementById('contactLink'); // Get the contact link
+            const contactFormModal = document.getElementById('contactFormModal'); // Get the contact form modal
+            const closeContactFormModalButton = document.getElementById('closeContactFormModal'); // Get the close button for contact form
+            const contactForm = document.getElementById('contactForm'); // Get the contact form itself
+
+            const GEMINI_API_KEY = 'AIzaSyC1BBYpIGN8eVAgMN1S0EfwGlOeHGzSQGg'; // Ihr Gemini API-Schlüssel
+
+            if (!analyzeButton) {
+                console.error("Fehler: 'analyzeButton' Element wurde nicht gefunden!");
+            }
+            if (!companyDetailsSection) {
+                console.error("Fehler: 'companyDetailsSection' Element wurde nicht gefunden!");
+            }
+
+            // --- UI State Management for Categories vs. Details ---
+            let currentView = 'categories'; // 'categories' or 'details'
+            
+            function showCategoryView() {
+                suggestionsContent.innerHTML = ''; // Clear previous content
+
+                // Add the fixed Phone Assistant card first
+                const phoneAssistantTitle = "KI Telefonassistent";
+                const phoneAssistantContent = `
+                    Dieser KI-gesteuerte Telefonassistent revolutioniert Ihre Kundenkommunikation. Er tätigt und nimmt Anrufe entgegen, spricht fließend natürliche Sprache und versteht Kontexte, die weit über herkömmliche Callbots hinausgehen. Vergessen Sie die frustrierenden Erfahrungen mit starren Hotlines herkömmlicher Anbieter; unser Assistent bietet eine empathische und effiziente Interaktion.
+                    
+                    **Vorteile:**
+                    * **Natürliche Konversation:** Führt Gespräche, die sich menschlich anfühlen.
+                    * **24/7 Verfügbarkeit:** Immer erreichbar für Kundenanfragen und Terminvereinbarungen.
+                    * **Automatisierte Aufgaben:** Übernimmt Anrufe, Terminbuchungen, Informationsabfragen und leitet komplexe Fälle intelligent weiter.
+                    * **Effizienzsteigerung:** Entlastet Ihr Team von Routineanrufen und administrativen Tätigkeiten.
+                    * **Verbesserte Kundenzufriedenheit:** Bietet schnelle, präzise und freundliche Antworten.
+                `;
+                const phoneAssistantCard = createSuggestionCard(phoneAssistantTitle, phoneAssistantContent);
+                suggestionsContent.appendChild(phoneAssistantCard); // Always visible and collapsible
+
+                // Add intro text if available
+                if (allParsedSuggestions.introText) {
+                    const introParagraph = document.createElement('p');
+                    introParagraph.className = 'text-gray-700 leading-relaxed mb-6 col-span-full';
+                    introParagraph.innerHTML = allParsedSuggestions.introText.replace(/\n/g, '<br>');
+                    suggestionsContent.appendChild(introParagraph);
+                }
+
+                // Render category cards
+                allParsedSuggestions.categories.forEach((category, index) => {
+                    const categoryCard = document.createElement('div');
+                    categoryCard.className = 'category-card bg-blue-100 p-6 rounded-xl shadow-md border border-blue-200 flex flex-col items-center justify-center text-center hover:bg-blue-200 transition-colors duration-200 group col-span-1'; // Ensure it takes 1 column by default
+                    categoryCard.innerHTML = `
+                        <h4 class="text-xl font-semibold text-blue-800 mb-2 group-hover:text-blue-900">${category.title}</h4>
+                        <p class="text-blue-700 text-sm group-hover:text-blue-800">Klicken für Details &rarr;</p>
+                    `;
+                    categoryCard.addEventListener('click', () => {
+                        showDetailsView(index); // Pass index to show specific category
+                    });
+                    suggestionsContent.appendChild(categoryCard);
+                });
+
+                currentView = 'categories';
+                // Adjust grid columns for category view
+                suggestionsContent.style.gridTemplateColumns = 'repeat(auto-fit, minmax(200px, 1fr))'; // Responsive categories
+            }
+
+            function showDetailsView(categoryIndex) {
+                suggestionsContent.innerHTML = ''; // Clear previous content
+
+                // Add "Back to Categories" button
+                const backButtonDiv = document.createElement('div');
+                backButtonDiv.className = 'col-span-full mb-6';
+                const backButton = document.createElement('button');
+                backButton.className = 'px-6 py-3 bg-gray-200 text-gray-800 rounded-full font-semibold hover:bg-gray-300 transition-colors duration-200 flex items-center justify-center mx-auto';
+                backButton.innerHTML = '&larr; Zurück zu Kategorien';
+                backButton.addEventListener('click', showCategoryView);
+                backButtonDiv.appendChild(backButton);
+                suggestionsContent.appendChild(backButtonDiv);
+
+                // Add category title for context
+                const categoryTitleElement = document.createElement('h4');
+                categoryTitleElement.className = 'text-2xl font-bold text-gray-800 mb-6 col-span-full';
+                categoryTitleElement.innerText = allParsedSuggestions.categories[categoryIndex].title;
+                suggestionsContent.appendChild(categoryTitleElement);
+
+
+                // Render individual suggestion cards for the selected category
+                allParsedSuggestions.categories[categoryIndex].suggestions.forEach(suggestion => {
+                    const card = createSuggestionCard(suggestion.title, suggestion.content);
+                    suggestionsContent.appendChild(card);
+                });
+
+                currentView = 'details';
+                 // Adjust grid columns for detail view (back to 1 or 2 columns as before)
+                suggestionsContent.style.gridTemplateColumns = 'repeat(auto-fit, minmax(300px, 1fr))';
+                if (window.innerWidth >= 768) { // md breakpoint
+                    suggestionsContent.style.gridTemplateColumns = 'repeat(2, 1fr)';
+                } else {
+                    suggestionsContent.style.gridTemplateColumns = 'repeat(1, 1fr)';
+                }
+            }
+            // --- End UI State Management ---
+
+
+            // Funktion zum Erstellen einer einzelnen Vorschlagskarte
+            function createSuggestionCard(title, content) {
+                const cardDiv = document.createElement('div');
+                cardDiv.className = 'bg-white p-6 rounded-xl shadow-md border border-gray-100 flex flex-col hover:shadow-lg transition-shadow duration-200';
+
+                const headerDiv = document.createElement('div');
+                headerDiv.className = 'suggestion-card-header flex justify-between items-center pb-3';
+                
+                const titleElement = document.createElement('h4');
+                titleElement.className = 'text-lg font-semibold text-blue-700 text-left pr-4';
+                titleElement.innerText = title;
+                headerDiv.appendChild(titleElement);
+
+                const arrowIcon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+                arrowIcon.setAttribute("class", "arrow-icon h-6 w-6 text-gray-500 flex-shrink-0");
+                arrowIcon.setAttribute("fill", "none");
+                arrowIcon.setAttribute("viewBox", "0 0 24 24");
+                arrowIcon.setAttribute("stroke", "currentColor");
+                arrowIcon.setAttribute("stroke-width", "2");
+                const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+                path.setAttribute("stroke-linecap", "round");
+                path.setAttribute("stroke-linejoin", "round");
+                path.setAttribute("d", "M19 9l-7 7-7-7"); // Chevron down
+                arrowIcon.appendChild(path);
+                headerDiv.appendChild(arrowIcon);
+
+                cardDiv.appendChild(headerDiv);
+
+                const contentContainer = document.createElement('div');
+                contentContainer.className = 'card-content hidden pt-3 border-t border-gray-200'; // Initially hidden
+
+                const descriptionElement = document.createElement('div');
+                descriptionElement.className = 'text-gray-700 text-sm leading-relaxed text-left';
+
+                // Markdown zu HTML konvertieren (Erklärung, Vorteile, Beispiel)
+                let formattedContent = content;
+                formattedContent = formattedContent.replace(/\*\*(Erklärung|Vorteile|Beispiel):?\*\*\s*/g, '<strong>$1:</strong> '); // Bold sub-headings
+                formattedContent = formattedContent.replace(/\*\s(.+)/g, '<li>$1</li>'); // List items
+                formattedContent = formattedContent.replace(/\n\n+/g, '<br><br>'); // Multiple newlines to paragraph breaks
+                formattedContent = formattedContent.replace(/\n/g, '<br>'); // Single newlines to line breaks
+
+                // Wenn es Listenpunkte gibt, diese in <ul> wickeln
+                if (formattedContent.includes('<li>')) {
+                    const tempDiv = document.createElement('div');
+                    tempDiv.innerHTML = formattedContent;
+                    const listItems = tempDiv.querySelectorAll('li');
+                    let ul = null;
+                    let lastNode = null;
+
+                    for (const item of Array.from(listItems)) {
+                        if (!ul) {
+                            ul = document.createElement('ul');
+                            ul.className = 'list-disc list-inside mt-2 space-y-1'; // Tailwind list styling
+                            if (item.previousSibling && item.previousSibling.nodeType === Node.TEXT_NODE && item.previousSibling.textContent.trim()) {
+                                // Add a br if there's text before the list
+                                const br = document.createElement('br');
+                                item.parentNode.insertBefore(br, item);
+                            }
+                            item.parentNode.insertBefore(ul, item);
+                        }
+                        ul.appendChild(item);
+                        lastNode = item;
+                    }
+                    // Ensure the rest of the text after the list is handled
+                    if (lastNode && lastNode.nextSibling) {
+                        const remainingText = document.createElement('div');
+                        while(lastNode.nextSibling) {
+                            remainingText.appendChild(lastNode.nextSibling);
+                        }
+                        ul.parentNode.insertBefore(remainingText, ul.nextSibling);
+                    }
+                    formattedContent = tempDiv.innerHTML; // Get the modified HTML
+                }
+
+                descriptionElement.innerHTML = formattedContent;
+                contentContainer.appendChild(descriptionElement);
+                cardDiv.appendChild(contentContainer);
+
+                // Add click listener to the header to toggle content
+                headerDiv.addEventListener('click', () => {
+                    contentContainer.classList.toggle('hidden');
+                    arrowIcon.classList.toggle('rotated');
+                });
+
+                return cardDiv;
+            }
+
+            // Funktion zum Parsen und Rendern der KI-Vorschläge in strukturierte Karten
+            function renderSuggestions(text) {
+                suggestionsContent.innerHTML = ''; // Vorherigen Inhalt löschen
+                allParsedSuggestions = { introText: '', categories: [] }; // Reset global storage
+
+                // Füge den "Telefonassistent"-Vorschlag separat HINZU (ALS ERSTES)
+                const phoneAssistantTitle = "KI Telefonassistent";
+                const phoneAssistantContent = `
+                    Dieser KI-gesteuerte Telefonassistent revolutioniert Ihre Kundenkommunikation. Er tätigt und nimmt Anrufe entgegen, spricht fließend natürliche Sprache und versteht Kontexte, die weit über herkömmliche Callbots hinausgehen. Vergessen Sie die frustrierenden Erfahrungen mit starren Hotlines herkömmlicher Anbieter; unser Assistent bietet eine empathische und effiziente Interaktion.
+                    
+                    **Vorteile:**
+                    * **Natürliche Konversation:** Führt Gespräche, die sich menschlich anfühlen.
+                    * **24/7 Verfügbarkeit:** Immer erreichbar für Kundenanfragen und Terminvereinbarungen.
+                    * **Automatisierte Aufgaben:** Übernimmt Anrufe, Terminbuchungen, Informationsabfragen und leitet komplexe Fälle intelligent weiter.
+                    * **Effizienzsteigerung:** Entlastet Ihr Team von Routineanrufen und administrativen Tätigkeiten.
+                    * **Verbesserte Kundenzufriedenheit:** Bietet schnelle, präzise und freundliche Antworten.
+                `;
+                const phoneAssistantCard = createSuggestionCard(phoneAssistantTitle, phoneAssistantContent);
+                suggestionsContent.appendChild(phoneAssistantCard); // Füge die Telefonassistent-Karte zuerst hinzu
+
+
+                // Regex, um den einleitenden Text und die einzelnen Vorschläge zu trennen
+                // Angepasst, um optional Leerzeichen nach dem Titel vor dem abschließenden Newline zu ermöglichen
+                const suggestionRegex = /\n\n\*\*(\d+\.\s.*?)\*\*\s*\n/g;
+                let matches = [];
+                let lastIndex = 0;
+                let match;
+
+                // Sammle alle Treffer für die Überschriften
+                while ((match = suggestionRegex.exec(text)) !== null) {
+                    matches.push({
+                        fullMatch: match[0],
+                        title: match[1].trim(), // z.B. "1. KI-gestützte Lead-Generierung"
+                        index: match.index,
+                        nextIndex: suggestionRegex.lastIndex
+                    });
+                }
+
+                let introText = '';
+                if (matches.length > 0 && matches[0].index > 0) {
+                    // Wenn vor dem ersten Vorschlag Text steht, ist das der Einleitungstext
+                    introText = text.substring(0, matches[0].index).trim();
+                } else if (matches.length === 0 && text.trim()) { // Prüfen, ob überhaupt Text vorhanden ist
+                    // Wenn keine Vorschläge gefunden wurden, ist der gesamte Text der Einleitungstext
+                    introText = text.trim();
+                }
+
+
+                if (introText) {
+                    const introParagraph = document.createElement('p');
+                    introParagraph.className = 'text-gray-700 leading-relaxed mb-6 col-span-full';
+                    introParagraph.innerHTML = introText.replace(/\n/g, '<br>');
+                    suggestionsContent.appendChild(introParagraph);
+                }
+
+                for (let i = 0; i < matches.length; i++) {
+                    const currentMatch = matches[i];
+                    const nextMatch = matches[i + 1];
+
+                    let content = '';
+                    if (nextMatch) {
+                        content = text.substring(currentMatch.nextIndex, nextMatch.index).trim();
+                    } else {
+                        content = text.substring(currentMatch.nextIndex).trim();
+                    }
+                    
+                    const card = createSuggestionCard(currentMatch.title, content);
+                    suggestionsContent.appendChild(card); // Füge die anderen KI-Karten danach hinzu
+                }
+
+                // Debugging: Überprüfen, ob überhaupt Inhalte gerendert wurden
+                if (suggestionsContent.children.length === 0 && !introText) {
+                    console.warn("renderSuggestions: Es wurden keine Vorschläge oder Einleitungstext gerendert. Überprüfen Sie das KI-Ausgabeformat.");
+                    showMessageModal('Hinweis', 'Es konnten keine strukturierten Vorschläge generiert werden. Die KI-Antwort entsprach möglicherweise nicht dem erwarteten Format. Bitte versuchen Sie es mit einer anderen Beschreibung oder überprüfen Sie die Konsolenausgabe für Details.');
+                }
+            }
+
+
+            // Behandelt den Klick auf den "Jetzt analysieren"-Button
+            analyzeButton.addEventListener('click', () => {
+                console.log("'Jetzt analysieren' Button geklickt.");
+                companyDetailsSection.classList.remove('hidden');
+                companyDetailsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                aiSuggestionsOutput.classList.add('hidden');
+                suggestionsContent.innerHTML = '';
+                console.log("Details-Sektion sichtbar gemacht und gescrollt.");
+            });
+
+            // Behandelt den Klick auf den "Analyse starten"-Button
+            submitDetailsButton.addEventListener('click', async () => {
+                console.log("'Analyse starten' Button geklickt.");
+                const industry = document.getElementById('industry').value;
+                const companyDescription = document.getElementById('companyDescription').value.trim(); 
+
+                if (!companyDescription) {
+                    console.warn("Beschreibung fehlt. Zeige Fehlermodal an.");
+                    showMessageModal('Fehlende Informationen', 'Bitte beschreiben Sie Ihr Unternehmen. Für eine präzise Analyse ist eine Beschreibung unerlässlich.');
+                    return;
+                }
+
+                console.log("Validierung erfolgreich. Zeige Ladeindikator an.");
+                loadingIndicator.classList.remove('hidden');
+                aiSuggestionsOutput.classList.add('hidden');
+                suggestionsContent.innerHTML = '';
+                aiSuggestionsOutput.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+                let prompt = `Basierend AUSSCHLIESSLICH auf der Branche "${industry}" und der folgenden Beschreibung, benötige ich KI-Automatisierungen und Optimierungen. Konzentrieren Sie sich rein auf die genannten Unternehmensdetails und die Branche.`;
+
+                prompt += ` Hier ist eine detaillierte Beschreibung des Unternehmens und seiner Aktivitäten: "${companyDescription}".`;
+
+                prompt += ` Geben Sie konkrete Beispiele und klare Vorteile für jede vorgeschlagene Automatisierung oder Optimierung. Strukturieren Sie die Antwort in Abschnitte, die mit "**Kategorie:** [KATEGORIE-NAME]" beginnen (z.B. "Kategorie: Kundeninteraktion", "Kategorie: Operative Effizienz", "Kategorie: Datenanalyse"). Listen Sie unter jeder Kategorie mehrere konkrete Vorschläge auf. Beginnen Sie dann jeden Vorschlag innerhalb einer Kategorie mit einer nummerierten, fettgedruckten Überschrift wie "**1. [VORSCHLAGSTITLE]**", gefolgt von einer **prägnanten und attraktiven Erklärung**, die die "Erklärung:", "Vorteile:" (mit Unterpunkten) und "Beispiel:" klar und **kurz** zusammenfasst. Verwenden Sie deutsche Überschriften und Texte. Stellen Sie sicher, dass der KI Telefonassistent NICHT in dieser Liste enthalten ist, da er separat hinzugefügt wird.`;
+
+
+                console.log('Sende Anfrage an Gemini API mit Prompt:', prompt);
+
+                const chatHistory = [{ role: "user", parts: [{ text: prompt }] }];
+                const payload = { contents: chatHistory };
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
+
+                try {
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (!response.ok) {
+                        let errorData;
+                        try {
+                            errorData = await response.json(); 
+                        } catch (parseError) {
+                            errorData = await response.text(); 
+                        }
+                        const errorMessage = typeof errorData === 'object' && errorData.error && errorData.error.message ? errorData.error.message : (typeof errorData === 'string' ? errorData : response.statusText);
+                        console.error('Gemini API antwortete mit einem Fehler:', response.status, response.statusText, errorData);
+                        showMessageModal('API-Fehler', `Der KI-Service hat mit einem Fehler geantwortet (${response.status}): ${errorMessage}. Bitte versuchen Sie es später erneut.`);
+                        return;
+                    }
+
+                    const result = await response.json(); 
+                    console.log('Gemini API Antwort erhalten:', result);
+
+                    if (result.candidates && result.candidates.length > 0 &&
+                        result.candidates[0].content && result.candidates[0].content.parts &&
+                        result.candidates[0].content.parts.length > 0) {
+                        const text = result.candidates[0].content.parts[0].text;
+                        renderSuggestions(text); 
+                        aiSuggestionsOutput.classList.remove('hidden'); 
+                        aiSuggestionsOutput.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        console.log("Vorschläge erfolgreich gerendert.");
+                    } else {
+                        showMessageModal('Fehler bei der Analyse', 'Es konnten keine Vorschläge generiert werden. Die KI-Antwort war unerwartet oder leer. Bitte versuchen Sie es später später erneut.');
+                        console.error('Unerwartete Gemini API Antwortstruktur:', result);
+                    }
+                } catch (error) {
+                    if (error instanceof SyntaxError) {
+                        showMessageModal('Antwort-Fehler', 'Die Antwort des KI-Services konnte nicht verarbeitet werden (ungültiges Format). Dies kann auf ein temporäres Problem hinweisen.');
+                        console.error('Syntaxfehler beim Parsen der API-Antwort:', error);
+                    } else {
+                        showMessageModal('Verbindungsfehler', 'Die Verbindung zum KI-Service konnte nicht hergestellt werden. Dies könnte an Ihrer Internetverbindung liegen oder ein temporäres Problem mit dem Google API-Dienst sein.');
+                        console.error('Fehler beim Aufruf der Gemini API:', error);
+                    }
+                } finally {
+                    loadingIndicator.classList.add('hidden');
+                    console.log("Ladeindikator ausgeblendet.");
+                }
+            });
+
+            // --- Kontaktformular Logik ---
+            if (contactLink && contactFormModal && closeContactFormModalButton && contactForm) {
+                contactLink.addEventListener('click', (event) => {
+                    event.preventDefault(); // Verhindert das Standardverhalten des Links (Springen nach oben)
+                    console.log("'Kontaktieren Sie uns noch heute!' Link geklickt.");
+                    contactFormModal.classList.remove('hidden'); // Zeigt das Modal an
+                });
+
+                closeContactFormModalButton.addEventListener('click', () => {
+                    console.log("Kontaktformular schließen Button geklickt.");
+                    contactFormModal.classList.add('hidden'); // Blendet das Modal aus
+                    contactForm.reset(); // Setzt das Formular zurück
+                });
+
+                contactForm.addEventListener('submit', async (event) => { // async hinzugefügt
+                    event.preventDefault(); // Verhindert das Neuladen der Seite
+                    console.log("Kontaktformular gesendet.");
+
+                    const name = document.getElementById('contactName').value;
+                    const email = document.getElementById('contactEmail').value;
+                    const phone = document.getElementById('contactPhone').value;
+                    const message = document.getElementById('contactMessage').value; 
+
+                    if (!name || !email || !message) { 
+                        showMessageModal('Eingabe erforderlich', 'Bitte geben Sie mindestens Ihren Namen, Ihre E-Mail-Adresse und Ihr Anliegen an.');
+                        return;
+                    }
+
+                    // --- Formspree Integration ---
+                    const formActionUrl = contactForm.action;
+                    const formData = new FormData(contactForm); // Erstellt FormData aus dem Formular
+
+                    try {
+                        const response = await fetch(formActionUrl, {
+                            method: 'POST',
+                            body: formData,
+                            headers: {
+                                'Accept': 'application/json' // Wichtig für Formspree JSON-Antworten
+                            }
+                        });
+
+                        if (response.ok) {
+                            showMessageModal('Vielen Dank!', 'Ihre Nachricht wurde erfolgreich gesendet. Wir werden uns in Kürze bei Ihnen melden!');
+                            contactFormModal.classList.add('hidden'); // Blendet das Modal aus
+                            contactForm.reset(); // Setzt das Formular zurück
+                        } else {
+                            const data = await response.json(); // Versuche, JSON-Fehler zu parsen
+                            if (Object.hasOwn(data, 'errors')) {
+                                const errorMessages = data["errors"].map(error => error["message"]).join(", ");
+                                showMessageModal('Fehler beim Senden', `Es gab ein Problem beim Senden Ihrer Nachricht: ${errorMessages}`);
+                            } else {
+                                showMessageModal('Fehler beim Senden', 'Hoppla! Es gab ein Problem beim Senden Ihrer Nachricht. Bitte versuchen Sie es später erneut.');
+                            }
+                            console.error('Formspree Fehlerantwort:', data);
+                        }
+                    } catch (error) {
+                        showMessageModal('Verbindungsfehler', 'Es konnte keine Verbindung zum Formular-Service hergestellt werden. Bitte prüfen Sie Ihre Internetverbindung.');
+                        console.error('Fehler beim Senden an Formspree:', error);
+                    }
+                    // --- Ende Formspree Integration ---
+                });
+            } else {
+                console.error("Fehler: Mindestens ein Element für das Kontaktformular wurde nicht gefunden (Kontaktlink, Modal, Schließen-Button oder Formular selbst).");
+            }
+        });
+    </script>
+</body>
+</html>
